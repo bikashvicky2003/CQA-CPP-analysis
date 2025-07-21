@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pharma CPP-CQA Analysis Tool</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/regression@2.0.1/dist/regression.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2980b9;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --success-color: #27ae60;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1, h2, h3 {
+            margin-top: 0;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .flex-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .flex-item {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .btn-accent {
+            background-color: var(--accent-color);
+        }
+        
+        .btn-accent:hover {
+            background-color: #c0392b;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: var(--dark-color);
+            color: white;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 400px;
+            width: 100%;
+        }
+        
+        .significance-high {
+            color: var(--success-color);
+            font-weight: bold;
+        }
+        
+        .significance-low {
+            color: var(--accent-color);
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #f1f1f1;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        
+        .tab.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 7px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .badge-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .badge-secondary {
+            background-color: #95a5a6;
+            color: white;
+        }
+        
+        .badge-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .flex-container {
+                flex-direction: column;
+            }
+            
+            .flex-item {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">Pharma CPP-CQA Analysis</div>
+                <div>
+                    <span class="badge badge-success">v1.0</span>
+                    <span class="badge badge-secondary">Process Analytics</span>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" data-tab="setup">Setup Parameters</div>
+            <div class="tab" data-tab="data">Input Data</div>
+            <div class="tab" data-tab="results">Analysis Results</div>
+        </div>
+        
+        <div id="setup" class="tab-content active">
+            <div class="card">
+                <h2>Configuration Setup</h2>
+                <p>Define your Critical Process Parameters (CPPs) and Critical Quality Attributes (CQAs) below.</p>
+                
+                <div class="flex-container">
+                    <div class="flex-item">
+                        <div class="form-group">
+                            <label>Product Name</label>
+                            <input type="text" id="productName" placeholder="e.g., Ibuprofen Tablet 200mg">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Number of CPPs</label>
+                            <input type="number" id="numCpps" min="1" max="20" value="5">
+                        </div>
+                        
+                        <div id="cppNames"></div>
+                        
+                        <button id="updateCpps" class="btn-accent">Update CPPs</button>
+                    </div>
+                    
+                    <div class="flex-item">
+                        <div class="form-group">
+                            <label>Number of CQAs</label>
+                            <input type="number" id="numCqas" min="1" max="10" value="2">
+                        </div>
+                        
+                        <div id="cqaNames"></div>
+                        
+                        <button id="updateCqas">Update CQAs</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Sample Preparation</h2>
+                <p>Enter the number of experimental batches/samples you have data for.</p>
+                
+                <div class="form-group">
+                    <label>Number of Samples</label>
+                    <input type="number" id="numSamples" min="3" max="100" value="10">
+                    <small>Minimum 3 samples required for regression analysis.</small>
+                </div>
+                
+                <button id="initDataTable">Prepare Data Table</button>
+            </div>
+        </div>
+        
+        <div id="data" class="tab-content">
+            <div class="card">
+                <h2>Input Data</h2>
+                <p>Enter your experimental data below. The system will automatically calculate regression models.</p>
+                
+                <div id="dataEntryContainer"></div>
+                
+                <div class="form-group">
+                    <button id="calculateRegression">Perform Regression Analysis</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="results" class="tab-content">
+            <div class="card">
+                <h2>Regression Results</h2>
+                <p>Statistical analysis of Critical Process Parameters (CPPs) impact on Critical Quality Attributes (CQAs).</p>
+                
+                <div id="resultsContainer"></div>
+            </div>
+            
+            <div class="card">
+                <h2>Regression Plots</h2>
+                <p>Visualization of regression relationships between significant CPPs and CQAs.</p>
+                
+                <div id="chartsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let productName = "";
+        let cppNames = [];
+        let cqaNames = [];
+        let sampleData = [];
+        let numSamples = 10;
+        let regressionResults = {};
+        
+        // DOM elements
+        const setupTab = document.querySelector('[data-tab="setup"]');
+        const dataTab = document.querySelector('[data-tab="data"]');
+        const resultsTab = document.querySelector('[data-tab="results"]');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const updateCppsBtn = document.getElementById('updateCpps');
+        const updateCqasBtn = document.getElementById('updateCqas');
+        const initDataTableBtn = document.getElementById('initDataTable');
+        const calculateRegressionBtn = document.getElementById('calculateRegression');
+        
+        // Tab switching functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                const tabId = tab.getAttribute('data-tab');
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                    if(content.id === tabId) {
+                        content.classList.add('active');
+                    }
+                });
+            });
+        });
+        
+        // Update CPP names form
+        updateCppsBtn.addEventListener('click', () => {
+            const numCpps = parseInt(document.getElementById('numCpps').value);
+            const cppContainer = document.getElementById('cppNames');
+            cppContainer.innerHTML = '';
+            
+            for(let i = 0; i < numCpps; i++) {
+                const div = document.createElement('div');
+                div.className = 'form-group';
+                
+                const label = document.createElement('label');
+                label.textContent = `CPP ${i+1} Name`;
+                
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'cpp-name';
+                input.placeholder = `e.g., RMG Speed, Blending Time, etc.`;
+                input.value = cppNames[i] || '';
+                
+                div.appendChild(label);
+                div.appendChild(input);
+                cppContainer.appendChild(div);
+            }
+        });
+        
+        // Update CQA names form
+        updateCqasBtn.addEventListener('click', () => {
+            const numCqas = parseInt(document.getElementById('numCqas').value);
+            const cqaContainer = document.getElementById('cqaNames');
+            cqaContainer.innerHTML = '';
+            
+            for(let i = 0; i < numCqas; i++) {
+                const div = document.createElement('div');
+                div.className = 'form-group';
+                
+                const label = document.createElement('label');
+                label.textContent = `CQA ${i+1} Name`;
+                
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'cqa-name';
+                input.placeholder = `e.g., Dissolution Time, Hardness, etc.`;
+                input.value = cqaNames[i] || '';
+                
+                div.appendChild(label);
+                div.appendChild(input);
+                cqaContainer.appendChild(div);
+            }
+        });
+        
+        // Initialize data table
+        initDataTableBtn.addEventListener('click', () => {
+            // Collect CPP names
+            cppNames = Array.from(document.querySelectorAll('.cpp-name')).map(input => input.value.trim());
+            
+            // Collect CQA names
+            cqaNames = Array.from(document.querySelectorAll('.cqa-name')).map(input => input.value.trim());
+            
+            // Get product name
+            productName = document.getElementById('productName').value.trim() || 'Pharmaceutical Tablet';
+            
+            // Check if names are entered
+            if(cppNames.some(name => name === '') || cqaNames.some(name => name === '')) {
+                alert('Please enter names for all CPPs and CQAs');
+                return;
+            }
+            
+            numSamples = parseInt(document.getElementById('numSamples').value);
+            
+            // Generate data entry table
+            const container = document.getElementById('dataEntryContainer');
+            container.innerHTML = '';
+            
+            const table = document.createElement('table');
+            
+            // Create header row
+            const headerRow = document.createElement('tr');
+            const sampleHeader = document.createElement('th');
+            sampleHeader.textContent = 'Sample';
+            headerRow.appendChild(sampleHeader);
+            
+            cppNames.forEach(cpp => {
+                const th = document.createElement('th');
+                th.textContent = cpp;
+                headerRow.appendChild(th);
+            });
+            
+            cqaNames.forEach(cqa => {
+                const th = document.createElement('th');
+                th.textContent = cqa;
+                headerRow.appendChild(th);
+            });
+            
+            table.appendChild(headerRow);
+            
+            // Create data rows
+            for(let i = 0; i < numSamples; i++) {
+                const row = document.createElement('tr');
+                
+                const sampleCell = document.createElement('td');
+                sampleCell.textContent = i + 1;
+                row.appendChild(sampleCell);
+                
+                // CPP inputs
+                cppNames.forEach((cpp, j) => {
+                    const td = document.createElement('td');
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.className = 'cpp-value';
+                    input.dataset.cpp = j;
+                    input.dataset.sample = i;
+                    input.placeholder = `Value for ${cpp}`;
+                    input.step = 'any';
+                    
+                    // If we have existing data, populate it
+                    if(sampleData[i] && sampleData[i].cppValues[j] !== undefined) {
+                        input.value = sampleData[i].cppValues[j];
+                    }
+                    
+                    td.appendChild(input);
+                    row.appendChild(td);
+                });
+                
+                // CQA inputs
+                cqaNames.forEach((cqa, j) => {
+                    const td = document.createElement('td');
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.className = 'cqa-value';
+                    input.dataset.cqa = j;
+                    input.dataset.sample = i;
+                    input.placeholder = `Value for ${cqa}`;
+                    input.step = 'any';
+                    
+                    // If we have existing data, populate it
+                    if(sampleData[i] && sampleData[i].cqaValues[j] !== undefined) {
+                        input.value = sampleData[i].cqaValues[j];
+                    }
+                    
+                    td.appendChild(input);
+                    row.appendChild(td);
+                });
+                
+                table.appendChild(row);
+            }
+            
+            container.appendChild(table);
+            
+            // Switch to data tab
+            dataTab.click();
+        });
+        
+        // Perform regression analysis
+        calculateRegressionBtn.addEventListener('click', () => {
+            // Collect all data
+            sampleData = [];
+            
+            for(let i = 0; i < numSamples; i++) {
+                const sample = {
+                    cppValues: [],
+                    cqaValues: []
+                };
+                
+                // Get CPP values
+                const cppInputs = document.querySelectorAll(`.cpp-value[data-sample="${i}"]`);
+                cppInputs.forEach(input => {
+                    sample.cppValues.push(parseFloat(input.value) || 0);
+                });
+                
+                // Get CQA values
+                const cqaInputs = document.querySelectorAll(`.cqa-value[data-sample="${i}"]`);
+                cqaInputs.forEach(input => {
+                    sample.cqaValues.push(parseFloat(input.value) || 0);
+                });
+                
+                sampleData.push(sample);
+            }
+            
+            // Perform regression for each CQA
+            regressionResults = {};
+            
+            cqaNames.forEach((cqa, cqaIndex) => {
+                // Prepare data for this CQA
+                const inputs = [];
+                const outputs = [];
+                
+                sampleData.forEach(sample => {
+                    inputs.push(sample.cppValues);
+                    outputs.push(sample.cqaValues[cqaIndex]);
+                });
+                
+                // Simple multivariate regression
+                const X = inputs.map(row => [1, ...row]); // Add intercept term
+                const y = outputs;
+                
+                // Using normal equations (X'X)^-1 X'y
+                const Xt = transpose(X);
+                const XtX = multiplyMatrices(Xt, X);
+                const XtXinv = inverse(XtX);
+                const Xty = multiplyMatrixVector(Xt, y);
+                const beta = multiplyMatrixVector(XtXinv, Xty);
+                
+                // Calculate standard errors and t-statistics
+                const yHat = multiplyMatrixVector(X, beta);
+                const residuals = y.map((yi, i) => yi - yHat[i]);
+                const SSE = residuals.reduce((sum, ri) => sum + ri * ri, 0);
+                const MSE = SSE / (X.length - X[0].length);
+                const SEs = [];
+                const tStats = [];
+                const pValues = [];
+                
+                for(let j = 0; j < beta.length; j++) {
+                    const SE = Math.sqrt(MSE * XtXinv[j][j]);
+                    SEs.push(SE);
+                    const tStat = beta[j] / SE;
+                    tStats.push(tStat);
+                    
+                    // Two-tailed p-value from t-distribution approximation
+                    const df = X.length - X[0].length;
+                    pValues.push(tDistributionPValue(tStat, df));
+                }
+                
+                // Calculate R-squared
+                const yMean = y.reduce((sum, yi) => sum + yi, 0) / y.length;
+                const SST = y.reduce((sum, yi) => sum + (yi - yMean) * (yi - yMean), 0);
+                const rSquared = 1 - SSE / SST;
+                
+                // Adjusted R-squared
+                const adjRSquared = 1 - (SSE / (X.length - X[0].length)) / (SST / (X.length - 1));
+                
+                // Store results
+                regressionResults[cqa] = {
+                    coefficients: beta,
+                    standardErrors: SEs,
+                    tStats: tStats,
+                    pValues: pValues,
+                    rSquared: rSquared,
+                    adjRSquared: adjRSquared,
+                    equation: generateEquation(beta, cppNames),
+                    significantParams: getSignificantParameters(beta, pValues, cppNames)
+                };
+            });
+            
+            // Display results
+            displayResults();
+            
+            // Generate charts
+            generateCharts();
+            
+            // Switch to results tab
+            resultsTab.click();
+        });
+        
+        // Matrix operations for regression
+        function transpose(matrix) {
+            return matrix[0].map((_, i) => matrix.map(row => row[i]));
+        }
+        
+        function multiplyMatrices(a, b) {
+            const result = [];
+            for(let i = 0; i < a.length; i++) {
+                result[i] = [];
+                for(let j = 0; j < b[0].length; j++) {
+                    let sum = 0;
+                    for(let k = 0; k < a[0].length; k++) {
+                        sum += a[i][k] * b[k][j];
+                    }
+                    result[i][j] = sum;
+                }
+            }
+            return result;
+        }
+        
+        function multiplyMatrixVector(matrix, vector) {
+            return matrix.map(row => {
+                return row.reduce((sum, value, i) => sum + value * vector[i], 0);
+            });
+        }
+        
+        function inverse(matrix) {
+            // Simple implementation for small matrices
+            // For production use, consider a robust library
+            if(matrix.length !== matrix[0].length) return null;
+            
+            const n = matrix.length;
+            const inverse = Array(n).fill().map(() => Array(n).fill(0));
+            
+            // Copy the matrix
+            const copy = matrix.map(row => [...row]);
+            
+            // Initialize inverse as identity matrix
+            for(let i = 0; i < n; i++) inverse[i][i] = 1;
+            
+            // Gaussian elimination
+            for(let i = 0; i < n; i++) {
+                // Make diagonal element 1
+                const diag = copy[i][i];
+                if(diag === 0) return null; // Matrix not invertible
+                
+                for(let j = 0; j < n; j++) {
+                    copy[i][j] /= diag;
+                    inverse[i][j] /= diag;
+                }
+                
+                // Make other elements in this column 0
+                for(let k = 0; k < n; k++) {
+                    if(k !== i) {
+                        const factor = copy[k][i];
+                        for(let j = 0; j < n; j++) {
+                            copy[k][j] -= factor * copy[i][j];
+                            inverse[k][j] -= factor * inverse[i][j];
+                        }
+                    }
+                }
+            }
+            
+            return inverse;
+        }
+        
+        // Generate equation string
+        function generateEquation(beta, names) {
+            let equation = `y = ${beta[0].toFixed(2)}`;
+            
+            for(let i = 1; i < beta.length; i++) {
+                equation += ` + ${beta[i].toFixed(2)}${names[i-1]}`;
+            }
+            
+            return equation;
+        }
+        
+        // Get significant parameters
+        function getSignificantParameters(beta, pValues, names, alpha = 0.05) {
+            const significant = [];
+            
+            for(let i = 0; i < pValues.length; i++) {
+                if(pValues[i] <= alpha) {
+                    if(i === 0) {
+                        significant.push({name: 'Intercept', coefficient: beta[i], pValue: pValues[i]});
+                    } else {
+                        significant.push({name: names[i-1], coefficient: beta[i], pValue: pValues[i]});
+                    }
+                }
+            }
+            
+            return significant;
+        }
+        
+        // Approximate p-value from t-distribution
+        function tDistributionPValue(t, df) {
+            // Approximation using incomplete beta function
+            const x = df / (df + t * t);
+            const term1 = Math.sqrt(df) * Math.pow(1 - x, df / 2) * Math.pow(x, 0.5);
+            
+            let sum = term1;
+            let j = 1;
+            let term = term1;
+            
+            while(Math.abs(term) > 1e-10) {
+                term *= (df / 2 + j - 1) * (1 - x) / j;
+                sum += term;
+                j++;
+            }
+            
+            const p = 1 - sum / 2;
+            return 2 * Math.min(p, 1 - p); // Two-tailed
+        }
+        
+        // Display results
+        function displayResults() {
+            const container = document.getElementById('resultsContainer');
+            container.innerHTML = '';
+            
+            // Product info header
+            const productHeader = document.createElement('h3');
+            productHeader.textContent = `Analysis for ${productName}`;
+            container.appendChild(productHeader);
+            
+            // Results for each CQA
+            for(const cqa in regressionResults) {
+                const resultCard = document.createElement('div');
+                resultCard.className = 'card';
+                resultCard.style.marginBottom = '15px';
+                
+                const cqaHeader = document.createElement('h3');
+                cqaHeader.textContent = `Regression for ${cqa}`;
+                resultCard.appendChild(cqaHeader);
+                
+                // Regression equation
+                const equation = document.createElement('p');
+                equation.style.fontSize = '1.1rem';
+                equation.style.fontWeight = 'bold';
+                equation.textContent = regressionResults[cqa].equation;
+                resultCard.appendChild(equation);
+                
+                // Model statistics
+                const statsDiv = document.createElement('div');
+                statsDiv.style.marginTop = '15px';
+                
+                const r2 = document.createElement('p');
+                r2.textContent = `R-squared: ${regressionResults[cqa].rSquared.toFixed(3)}`;
+                statsDiv.appendChild(r2);
+                
+                const adjR2 = document.createElement('p');
+                adjR2.textContent = `Adjusted R-squared: ${regressionResults[cqa].adjRSquared.toFixed(3)}`;
+                statsDiv.appendChild(adjR2);
+                
+                resultCard.appendChild(statsDiv);
+                
+                // Coefficients table
+                const table = document.createElement('table');
+                table.style.marginTop = '15px';
+                
+                // Table header
+                const headerRow = document.createElement('tr');
+                ['Parameter', 'Coefficient', 'Standard Error', 't-statistic', 'p-value'].forEach(text => {
+                    const th = document.createElement('th');
+                    th.textContent = text;
+                    headerRow.appendChild(th);
+                });
+                table.appendChild(headerRow);
+                
+                // Table rows
+                for(let i = 0; i < regressionResults[cqa].coefficients.length; i++) {
+                    const row = document.createElement('tr');
+                    
+                    // Parameter name
+                    const paramName = i === 0 ? 'Intercept' : cppNames[i-1];
+                    const paramCell = document.createElement('td');
+                    paramCell.textContent = paramName;
+                    row.appendChild(paramCell);
+                    
+                    // Coefficient
+                    const coeffCell = document.createElement('td');
+                    coeffCell.textContent = regressionResults[cqa].coefficients[i].toFixed(4);
+                    row.appendChild(coeffCell);
+                    
+                    // Standard error
+                    const seCell = document.createElement('td');
+                    seCell.textContent = regressionResults[cqa].standardErrors[i].toFixed(4);
+                    row.appendChild(seCell);
+                    
+                    // t-statistic
+                    const tCell = document.createElement('td');
+                    tCell.textContent = regressionResults[cqa].tStats[i].toFixed(4);
+                    row.appendChild(tCell);
+                    
+                    // p-value
+                    const pCell = document.createElement('td');
+                    pCell.textContent = regressionResults[cqa].pValues[i].toFixed(6);
+                    if(regressionResults[cqa].pValues[i] <= 0.05) {
+                        pCell.classList.add('significance-high');
+                    } else {
+                        pCell.classList.add('significance-low');
+                    }
+                    row.appendChild(pCell);
+                    
+                    table.appendChild(row);
+                }
+                resultCard.appendChild(table);
+                
+                // Significant parameters
+                if(regressionResults[cqa].significantParams.length > 0) {
+                    const sigParamsDiv = document.createElement('div');
+                    sigParamsDiv.style.marginTop = '20px';
+                    
+                    const sigHeader = document.createElement('h4');
+                    sigHeader.textContent = 'Statistically Significant Parameters (p ≤ 0.05):';
+                    sigParamsDiv.appendChild(sigHeader);
+                    
+                    const sigList = document.createElement('ul');
+                    regressionResults[cqa].significantParams.forEach(param => {
+                        if(param.name !== 'Intercept') { // Skip intercept
+                            const li = document.createElement('li');
+                            li.textContent = `${param.name}: coefficient = ${param.coefficient.toFixed(3)} (p = ${param.pValue.toFixed(4)})`;
+                            sigList.appendChild(li);
+                        }
+                    });
+                    sigParamsDiv.appendChild(sigList);
+                    
+                    resultCard.appendChild(sigParamsDiv);
+                } else {
+                    const noSigNote = document.createElement('p');
+                    noSigNote.textContent = 'No statistically significant parameters found (at p ≤ 0.05 threshold).';
+                    noSigNote.style.marginTop = '20px';
+                    resultCard.appendChild(noSigNote);
+                }
+                
+                container.appendChild(resultCard);
+            }
+        }
+        
+        // Generate regression charts
+        function generateCharts() {
+            const container = document.getElementById('chartsContainer');
+            container.innerHTML = '';
+            
+            // Charts for each CQA
+            for(const cqa in regressionResults) {
+                // Find the most significant CPP
+                let mostSigCPP = null;
+                let maxSignificance = 0;
+                
+                for(let i = 1; i < regressionResults[cqa].pValues.length; i++) {
+                    const significance = 1 - regressionResults[cqa].pValues[i];
+                    if(significance > maxSignificance) {
+                        maxSignificance = significance;
+                        mostSigCPP = cppNames[i-1];
+                    }
+                }
+                
+                if(!mostSigCPP) continue;
+                
+                const chartCard = document.createElement('div');
+                chartCard.className = 'card';
+                chartCard.style.marginBottom = '15px';
+                
+                const chartHeader = document.createElement('h3');
+                chartHeader.textContent = `${cqa} vs Most Significant CPP (${mostSigCPP})`;
+                chartCard.appendChild(chartHeader);
+                
+                const chartDiv = document.createElement('div');
+                chartDiv.className = 'chart-container';
+                chartCard.appendChild(chartDiv);
+                
+                container.appendChild(chartCard);
+                
+                // Get the index of the most significant CPP
+                const cppIndex = cppNames.indexOf(mostSigCPP);
+                
+                // Prepare data for the chart
+                const xValues = sampleData.map(sample => sample.cppValues[cppIndex]);
+                const yValues = sampleData.map(sample => sample.cqaValues[cqaNames.indexOf(cqa)]);
+                
+                // Calculate predicted values
+                const predictedY = sampleData.map(sample => {
+                    return regressionResults[cqa].coefficients[0] + 
+                           sample.cppValues.reduce((sum, x, i) => sum + regressionResults[cqa].coefficients[i+1] * x, 0);
+                });
+                
+                // Create scatter plot
+                const ctx = document.createElement('canvas');
+                chartDiv.appendChild(ctx);
+                
+                new Chart(ctx.getContext('2d'), {
+                    type: 'scatter',
+                    data: {
+                        datasets: [
+                            {
+                                label: 'Actual Data',
+                                data: xValues.map((x, i) => ({x, y: yValues[i]})),
+                                backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                                pointRadius: 8
+                            },
+                            {
+                                label: 'Regression Line',
+                                data: xValues.map((x, i) => ({x, y: predictedY[i]})),
+                                type: 'line',
+                                borderColor: 'rgba(231, 76, 60, 0.7)',
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                fill: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: mostSigCPP
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: cqa
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: `Relationship between ${mostSigCPP} and ${cqa}`,
+                                font: {
+                                    size: 16
+                                }
+                            },
+                            legend: {
+                                position: 'top'
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', () => {
+            // Default CPP names
+            document.getElementById('numCpps').value = 5;
+            updateCppsBtn.click();
+            
+            document.querySelectorAll('.cpp-name').forEach((input, index) => {
+                const names = [
+                    'RMG Blender Speed (rpm)',
+                    'Blending Time (min)',
+                    'Precompression Force (kN)',
+                    'Main Compression Force (kN)',
+                    'Tablet Press Speed (rpm)'
+                ];
+                input.value = names[index] || '';
+            });
+            
+            // Default CQA names
+            document.getElementById('numCqas').value = 2;
+            updateCqasBtn.click();
+            
+            document.querySelectorAll('.cqa-name').forEach((input, index) => {
+                const names = [
+                    'Dissolution Time (min)',
+                    'Disintegration Time (sec)'
+                ];
+                input.value = names[index] || '';
+            });
+            
+            document.getElementById('productName').value = 'Ibuprofen Tablet 200mg';
+        });
+    </script>
+</body>
+</html>
